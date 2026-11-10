@@ -59,6 +59,14 @@
         android:layout_marginTop="8dp"
         android:backgroundTint="#FF9800"
         android:text="@string/grant_both" />
+    <!-- Phím bấm cho bài NC2 -->
+    <Button
+        android:id="@+id/btnDocDanhBa"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:backgroundTint="#4CAF50"
+        android:text="Đọc 5 liên hệ đầu tiên (NC2)" />
     <Button
         android:id="@+id/btnCaiDat"
         style="?attr/materialButtonOutlinedStyle"

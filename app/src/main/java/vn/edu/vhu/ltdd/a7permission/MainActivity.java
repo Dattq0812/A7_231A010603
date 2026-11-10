@@ -28,6 +28,9 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import android.provider.ContactsContract;
+import android.database.Cursor;
+
 public class MainActivity extends AppCompatActivity {
 
     // TODO: thay 2201234567 bằng MSSV của bạn
@@ -125,6 +128,16 @@ public class MainActivity extends AppCompatActivity {
                 xinNhieuQuyen.launch(new String[]{
                         Manifest.permission.CAMERA
                 });
+            }
+        });
+        Button btnDocDanhBa = findViewById(R.id.btnDocDanhBa);
+
+        btnDocDanhBa.setOnClickListener(v -> {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS)
+                    == PackageManager.PERMISSION_GRANTED) {
+                docVaHienThiDanhBa();
+            } else {
+                xinQuyenDanhBa.launch(Manifest.permission.READ_CONTACTS);
             }
         });
     }
@@ -274,4 +287,67 @@ public class MainActivity extends AppCompatActivity {
         tvTrangThai.setText(s);
         Log.d(TAG, s.replace("\n", " | "));
     }
+    // Hàm xin danh bạ NC2
+    private void docVaHienThiDanhBa() {
+        StringBuilder ketQua = new StringBuilder();
+        int dem = 0;
+
+        // Truy vấn dữ liệu danh bạ
+        Cursor cursor = getContentResolver().query(
+                ContactsContract.Contacts.CONTENT_URI,
+                null, null, null, null);
+
+        if (cursor != null && cursor.getCount() > 0) {
+            while (cursor.moveToNext() && dem < 5) {
+                // Lấy tên
+                int nameIndex = cursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME);
+                String name = cursor.getString(nameIndex);
+
+                // Lấy ID để truy vấn số điện thoại bên trong
+                int idIndex = cursor.getColumnIndex(ContactsContract.Contacts._ID);
+                String id = cursor.getString(idIndex);
+
+                // Kiểm tra xem liên hệ này có sđt không
+                int hasPhoneIndex = cursor.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER);
+                if (cursor.getInt(hasPhoneIndex) > 0) {
+                    Cursor pCursor = getContentResolver().query(
+                            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                            null,
+                            ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?",
+                            new String[]{id}, null);
+
+                    if (pCursor != null && pCursor.moveToFirst()) {
+                        int phoneIndex = pCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
+                        String phoneNo = pCursor.getString(phoneIndex);
+                        ketQua.append(dem + 1).append(". ").append(name).append("\n   ").append(phoneNo).append("\n\n");
+                        pCursor.close();
+                    }
+                } else {
+                    ketQua.append(dem + 1).append(". ").append(name).append("\n   (Không có SĐT)\n\n");
+                }
+                dem++;
+            }
+            cursor.close();
+        }
+
+        if (ketQua.length() == 0) {
+            ketQua.append("Danh bạ máy ảo đang trống.");
+        }
+
+        // Hiển thị danh bạ vừa đọc được lên một AlertDialog
+        new AlertDialog.Builder(this)
+                .setTitle("5 Liên hệ đầu tiên")
+                .setMessage(ketQua.toString().trim())
+                .setPositiveButton("Đóng", null)
+                .show();
+    }
+    private final ActivityResultLauncher<String> xinQuyenDanhBa = registerForActivityResult(
+            new ActivityResultContracts.RequestPermission(),
+            duocCap -> {
+                if (duocCap) {
+                    docVaHienThiDanhBa();
+                } else {
+                    Toast.makeText(this, "Từ chối quyền đọc danh bạ", Toast.LENGTH_SHORT).show();
+                }
+            });
 }
