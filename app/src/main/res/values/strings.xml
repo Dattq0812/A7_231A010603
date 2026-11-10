@@ -22,7 +22,7 @@
     <string name="noti_text">Bạn vừa gửi thông báo thành công.</string>
     <string name="noti_denied">Bạn đã từ chối quyền gửi thông báo.</string>
     <string name="photo_cancelled">Đã hủy chụp ảnh.</string>
-
+    <string name="grant_both">Xin 2 quyền cùng lúc</string>
     <string name="granted">ĐÃ CẤP</string>
     <string name="denied">CHƯA CẤP</string>
     <string name="status_format">Quyền CAMERA: %1$s\nQuyền THÔNG BÁO: %2$s</string>

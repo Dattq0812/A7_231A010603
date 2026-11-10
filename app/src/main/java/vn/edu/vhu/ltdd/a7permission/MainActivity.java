@@ -38,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
 
     private ImageView imgAnh;
     private TextView tvTrangThai;
+    private String thongTinAnh = "";
 
     // ---------------------------------------------------------------
     // 1) Bộ xin quyền CAMERA.
@@ -77,8 +78,12 @@ public class MainActivity extends AppCompatActivity {
             (Bitmap bitmap) -> {
                 if (bitmap != null) {
                     imgAnh.setImageBitmap(bitmap);
-                    tvTrangThai.setText(getString(R.string.status_photo,
-                            bitmap.getWidth(), bitmap.getHeight()));
+
+                    // SỬA DÒNG NÀY: Lưu thông tin kích thước vào biến
+                    thongTinAnh = getString(R.string.status_photo, bitmap.getWidth(), bitmap.getHeight());
+
+                    // Kích hoạt cập nhật gộp cả quyền và kích thước ảnh
+                    capNhatTrangThai();
                 } else {
                     Toast.makeText(this, R.string.photo_cancelled, Toast.LENGTH_SHORT).show();
                 }
@@ -106,6 +111,22 @@ public class MainActivity extends AppCompatActivity {
         btnChupAnh.setOnClickListener(v -> kiemTraRoiChup());
         btnThongBao.setOnClickListener(v -> kiemTraRoiGuiThongBao());
         btnCaiDat.setOnClickListener(v -> moCaiDatUngDung());
+        Button btnXinNhieuQuyen = findViewById(R.id.btnXinNhieuQuyen);
+
+        btnXinNhieuQuyen.setOnClickListener(v -> {
+            // Kiểm tra nếu là Android 13 (API 33) trở lên thì mới xin quyền thông báo
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                xinNhieuQuyen.launch(new String[]{
+                        Manifest.permission.CAMERA,
+                        Manifest.permission.POST_NOTIFICATIONS
+                });
+            } else {
+                // Dưới Android 13 thì chỉ cần xin quyền Camera
+                xinNhieuQuyen.launch(new String[]{
+                        Manifest.permission.CAMERA
+                });
+            }
+        });
     }
 
     @Override
@@ -203,18 +224,53 @@ public class MainActivity extends AppCompatActivity {
             Log.w(TAG, "Thiếu quyền gửi thông báo", e);
         }
     }
+    // ===================== BÀI NC1: XIN NHIỀU QUYỀN =====================
+    private final ActivityResultLauncher<String[]> xinNhieuQuyen = registerForActivityResult(
+            new ActivityResultContracts.RequestMultiplePermissions(),
+            result -> {
+                // "result" trả về là một Map<String, Boolean> chứa tên quyền và trạng thái cấp
+                Boolean cameraCap = result.get(Manifest.permission.CAMERA);
+                Boolean thongBaoCap = result.get(Manifest.permission.POST_NOTIFICATIONS);
 
+                // Xử lý riêng kết quả của quyền Camera
+                if (cameraCap != null) {
+                    if (cameraCap) {
+                        Toast.makeText(this, "Đã cấp quyền CAMERA", Toast.LENGTH_SHORT).show();
+                        // Tùy chọn: gọi hàm moCamera() luôn nếu muốn
+                    } else {
+                        Toast.makeText(this, "Từ chối quyền CAMERA", Toast.LENGTH_SHORT).show();
+                    }
+                }
+
+                // Xử lý riêng kết quả của quyền Thông báo (nếu có tồn tại)
+                if (thongBaoCap != null) {
+                    if (thongBaoCap) {
+                        Toast.makeText(this, "Đã cấp quyền THÔNG BÁO", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, "Từ chối quyền THÔNG BÁO", Toast.LENGTH_SHORT).show();
+                    }
+                }
+
+                // Cập nhật lại TextView hiển thị
+                capNhatTrangThai();
+            }
+    );
     // =====================  HIỂN THỊ TRẠNG THÁI  =====================
 
     private void capNhatTrangThai() {
-        boolean camera = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-                == PackageManager.PERMISSION_GRANTED;
-        boolean thongBao = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU
-                || ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-                == PackageManager.PERMISSION_GRANTED;
+        boolean camera = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
+        boolean thongBao = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED;
+
         String s = getString(R.string.status_format,
                 camera ? getString(R.string.granted) : getString(R.string.denied),
                 thongBao ? getString(R.string.granted) : getString(R.string.denied));
+
+        // THÊM ĐOẠN NÀY: Nếu đã chụp ảnh, nối thêm thông tin ảnh xuống dưới cùng
+        if (!thongTinAnh.isEmpty()) {
+            s += "\n\n" + thongTinAnh;
+        }
+
         tvTrangThai.setText(s);
         Log.d(TAG, s.replace("\n", " | "));
     }

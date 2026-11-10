@@ -51,7 +51,14 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:text="@string/btn_thong_bao" />
-
+    <!-- ===== THÊM NÚT CHO NC1 ===== -->
+    <Button
+        android:id="@+id/btnXinNhieuQuyen"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:backgroundTint="#FF9800"
+        android:text="@string/grant_both" />
     <Button
         android:id="@+id/btnCaiDat"
         style="?attr/materialButtonOutlinedStyle"
